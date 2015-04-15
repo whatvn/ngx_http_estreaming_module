@@ -1,6 +1,6 @@
 
 # **nginx_http_estreaming_module**
-
+=================================
 Nginx module that automatically:
     - generate hls (HTTP live streaming) m3u8 playlist with built-in adaptive bitrate support
     - split h264 file into small chunks *ts* files according to user's request video bitrate
@@ -11,6 +11,7 @@ Nginx module that automatically:
 
 
 # **detail** 
+============
 
 - This module is `ngx-hls-module` fork (which is also a fork from ngx_h264_module of *codeshop*). ngx_hls_module already supports generate hls playlist and split mp4 file on-the-fly. 
 - ngx_http_estreaming_module extends ngx_hls_module to support adaptive bitrate, generate playlist based on bitrate/resolution of source video (eq: if source video has resolution 1280x720, nginx_http_estreaming_module with generate playlist with: 1280x720, 854x480, 640x360).
@@ -21,10 +22,11 @@ Then if user requests for 480p playlist, ts file will be transcoded to 480p and 
 - I've tried so hard to optimize decoding/transcoding video process to make it fast, but if someone have experience on this, please give some help.
 
 # **usage:**
-
+===========
 
 1. To compile:
-    1.1 You have to compile libx264, fdk-aac and ffmpeg libraries. Command I use to compile ffmpeg:
+
+ 1.1 You have to compile libx264, fdk-aac and ffmpeg libraries. Command I use to compile ffmpeg:
 
 ::
     
@@ -33,7 +35,7 @@ Then if user requests for 480p playlist, ts file will be transcoded to 480p and 
     make install 
 
 
-   1.2 Compile nginx with --add-module option
+ 1.2 Compile nginx with --add-module option
 
 ::
     
@@ -79,11 +81,12 @@ Example output `demo.m3u8`:
 ::
 
     #EXTM3U
-    #EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=1280000, RESOLUTION=640x360
+    #EXT-X-ALLOW-CACHE:NO
+    #EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=1280000, RESOLUTION=640x360,CODECS="mp4a.40.2, avc1.4d4015"
     adbr/360p/demo.m3u8
-    #EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=2560000, RESOLUTION=854x480
+    #EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=2560000, RESOLUTION=854x480,CODECS="mp4a.40.2, avc1.4d4015"
     adbr/480p/demo.m3u8
-    #EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=5120000, RESOLUTION=1280x720
+    #EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=5120000, RESOLUTION=1280x720,CODECS="mp4a.40.2, avc1.4d4015"
     org/demo.m3u8
 
 
@@ -93,7 +96,6 @@ When receive master playlist, player will choose which child playlist should be 
 
     #EXTM3U
     #EXT-X-TARGETDURATION:8
-    #EXT-X-ALLOW-CACHE:NO
     #EXT-X-MEDIA-SEQUENCE:0
     #EXT-X-VERSION:4
     #EXTINF:6.001,
@@ -112,7 +114,7 @@ This module was tested with: jwplayer, html5, flowplayer, flashhls, ios device, 
 
 
 # **directive:**
-
+===============
 
 - *streaming* : enable this module in server|location 
 - *segment_length* : length of ts chunk files, in second
@@ -126,6 +128,7 @@ This module was tested with: jwplayer, html5, flowplayer, flashhls, ios device, 
 
 
 # **roadmap**
+=============
 
 1. support Http dynamic streaming (HDS)
 2. support other video extension: mkv, avi, flv...
@@ -135,13 +138,13 @@ This module was tested with: jwplayer, html5, flowplayer, flashhls, ios device, 
 
 
 # **Note**
-
+==========
 If you use this module, you don't have to use ngx_http_mp4_module anymore, since it already embeded into this module.
 
 
 
 # **license** 
-    
+=============    
 Because this module based on ngx_h264_module from codeshop, you should consider their license. It also use libx264, and x264 uses GPLv2, so this module also uses GPLv2 too.
 
     
