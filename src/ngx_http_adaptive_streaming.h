@@ -19,7 +19,6 @@
 #include <libavutil/mathematics.h>
 #include <libavutil/opt.h>
 #include <libavutil/old_pix_fmts.h>
-#include <libavresample/avresample.h>
 #include <libswresample/swresample.h>
 #include <libavfilter/avfiltergraph.h>
 #include <libavfilter/avcodec.h>
