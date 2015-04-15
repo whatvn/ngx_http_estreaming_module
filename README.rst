@@ -38,7 +38,19 @@ Then if user requests for 480p playlist, ts file will be transcoded to 480p and 
 
 1. To compile:
 
- 1.1 You have to compile libx264, fdk-aac and ffmpeg libraries. Command I use to compile ffmpeg:
+1.1 You have to compile libx264, fdk-aac and ffmpeg libraries. Command I use to compile ffmpeg:
+
+*fdk-aac on CentOS*
+::
+
+    # git clone https://github.com/mstorsjo/fdk-aac 
+    # cd fdk-aac
+    # ./configure ; make; make install 
+    # yum install ffmpeg-devel x264-devel 
+
+
+
+or compile everything like I do 
 
 ::
     
@@ -47,7 +59,7 @@ Then if user requests for 480p playlist, ts file will be transcoded to 480p and 
     make install 
 
 
- 1.2 Compile nginx with --add-module option
+1.2 Compile nginx with --add-module option
 
 ::
     
