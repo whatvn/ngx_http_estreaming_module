@@ -12,13 +12,13 @@ Nginx module that automatically:
 
 # detail 
 
-    - This module is `ngx-hls-module` fork (which is also a fork from ngx_h264_module of *codeshop*). ngx_hls_module already supports generate hls playlist and split mp4 file on-the-fly. 
-    - ngx_http_estreaming_module extends ngx_hls_module to support adaptive bitrate, generate playlist based on bitrate/resolution of source video (eq: if source video has resolution 1280x720, nginx_http_estreaming_module with generate playlist with: 1280x720, 854x480, 640x360).
-      Then if user requests for 480p playlist, ts file will be transcoded to 480p and then response to client. 
-    - ngx_http_estreaming makes use of ffmpeg libraries: libavcodec, libavfilter, libavformat, libavresample. it also use libx264 to encode h264 video, and libfdk_acc to encode aac audio,  
-    - This module is a very expensive cpu usage module. it splits video into small chunk then transcode video on-the-fly. But it's faster than almost  current pre-transcoding solution. 
+- This module is `ngx-hls-module` fork (which is also a fork from ngx_h264_module of *codeshop*). ngx_hls_module already supports generate hls playlist and split mp4 file on-the-fly. 
+- ngx_http_estreaming_module extends ngx_hls_module to support adaptive bitrate, generate playlist based on bitrate/resolution of source video (eq: if source video has resolution 1280x720, nginx_http_estreaming_module with generate playlist with: 1280x720, 854x480, 640x360).
+Then if user requests for 480p playlist, ts file will be transcoded to 480p and then response to client. 
+- ngx_http_estreaming makes use of ffmpeg libraries: libavcodec, libavfilter, libavformat, libavresample. it also use libx264 to encode h264 video, and libfdk_acc to encode aac audio,  
+- This module is a very expensive cpu usage module. it splits video into small chunk then transcode video on-the-fly. But it's faster than almost  current pre-transcoding solution. 
     
-    - I've tried so hard to optimize decoding/transcoding video process to make it fast, but if someone have experience on this, please give some help.
+- I've tried so hard to optimize decoding/transcoding video process to make it fast, but if someone have experience on this, please give some help.
 
 # usage:
 
