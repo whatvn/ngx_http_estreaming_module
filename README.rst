@@ -10,6 +10,18 @@ Nginx module that automatically:
     - Can fix video to enable fast-start (quicktime faststart) streaming 
 
 
+# demo
+=====
+
+http://ethicconsultant.com/player/ 
+
+This is 720p video in h264 format without any pre-transcoding or segmenting.
+Depend on your bandwidth, video will be transcoded and delivered on-the-fly. 
+
+Please note: this server is a tiny server: 1core cpu with 512mb ram
+
+
+
 # **detail** 
 ============
 
