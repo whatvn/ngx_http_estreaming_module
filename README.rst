@@ -1,5 +1,5 @@
 
-# nginx_http_estreaming_module
+# **nginx_http_estreaming_module**
 
 Nginx module that automatically:
     - generate hls (HTTP live streaming) m3u8 playlist with built-in adaptive bitrate support
@@ -10,7 +10,7 @@ Nginx module that automatically:
     - Can fix video to enable fast-start (quicktime faststart) streaming 
 
 
-# detail 
+# **detail** 
 
 - This module is `ngx-hls-module` fork (which is also a fork from ngx_h264_module of *codeshop*). ngx_hls_module already supports generate hls playlist and split mp4 file on-the-fly. 
 - ngx_http_estreaming_module extends ngx_hls_module to support adaptive bitrate, generate playlist based on bitrate/resolution of source video (eq: if source video has resolution 1280x720, nginx_http_estreaming_module with generate playlist with: 1280x720, 854x480, 640x360).
@@ -20,7 +20,7 @@ Then if user requests for 480p playlist, ts file will be transcoded to 480p and 
     
 - I've tried so hard to optimize decoding/transcoding video process to make it fast, but if someone have experience on this, please give some help.
 
-# usage:
+# **usage:**
 
 
 1. To compile:
@@ -111,37 +111,37 @@ This module was tested with: jwplayer, html5, flowplayer, flashhls, ios device, 
 
 
 
-# directive:
+# **directive:**
 
 
-    *streaming* : enable this module in server|location 
-    *segment_length* : length of ts chunk files, in second
-    *hls_buffer_size*: size in b/k/m/g size of hls moov atom buffer (usually 500 kB is enough)
-    *hls_max_buffer_size* : size in b/k/m/g max size of hls moov atom buffer size
-    *mp4_buffer_size*: size in b/k/m/g size of mp4 moov atom buffer - from original ngx_http_mp4_module (usually 500 kB is enough)
-    *mp4_max_buffer_size*: size in b/k/m/g max size of mp4 moov atom buffer - from original ngx_http_mp4_module
-    *hls_proxy_address*: string when this directive is configured, instead of generate playlist with relative ts url, a full url will be produced: /adbr/360p/12/demo.ts -> http://cdn.stream.domain.com/adbr/360p/12/demo.ts
-    *fix_mp4*: on|of In order to split mp4 quickly, mp4 file shoule be encode using 2-pass encoding, or using a tool to move moov-atom data to the beginning of mp4 file. If this flag is enable, mp4 file will be fix automatically. 
-
-
-
-# roadmap
-
-    1. support Http dynamic streaming (HDS)
-    2. support other video extension: mkv, avi, flv...
-    3. make use of nginx event 
-    4. optimize transcoding process to make it faster 
-    5. support hls encryption.
-
-
-# Note
-
-    If you use this module, you don't have to use ngx_http_mp4_module anymore, since it already embeded into this module.
+- *streaming* : enable this module in server|location 
+- *segment_length* : length of ts chunk files, in second
+- *hls_buffer_size*: size in b/k/m/g size of hls moov atom buffer (usually 500 kB is enough)
+- *hls_max_buffer_size* : size in b/k/m/g max size of hls moov atom buffer size
+- *mp4_buffer_size*: size in b/k/m/g size of mp4 moov atom buffer - from original ngx_http_mp4_module (usually 500 kB is enough)
+- *mp4_max_buffer_size*: size in b/k/m/g max size of mp4 moov atom buffer - from original ngx_http_mp4_module
+- *hls_proxy_address*: string when this directive is configured, instead of generate playlist with relative ts url, a full url will be produced: /adbr/360p/12/demo.ts -> http://cdn.stream.domain.com/adbr/360p/12/demo.ts
+- *fix_mp4*: on|of In order to split mp4 quickly, mp4 file shoule be encode using 2-pass encoding, or using a tool to move moov-atom data to the beginning of mp4 file. If this flag is enable, mp4 file will be fix automatically. 
 
 
 
-# license 
+# **roadmap**
+
+1. support Http dynamic streaming (HDS)
+2. support other video extension: mkv, avi, flv...
+3. make use of nginx event 
+4. optimize transcoding process to make it faster 
+5. support hls encryption.
+
+
+# **Note**
+
+If you use this module, you don't have to use ngx_http_mp4_module anymore, since it already embeded into this module.
+
+
+
+# **license** 
     
-    Because this module based on ngx_h264_module from codeshop, you should consider their license. It also use libx264, and x264 uses GPLv2, so this module also uses GPLv2 too.
+Because this module based on ngx_h264_module from codeshop, you should consider their license. It also use libx264, and x264 uses GPLv2, so this module also uses GPLv2 too.
 
     
