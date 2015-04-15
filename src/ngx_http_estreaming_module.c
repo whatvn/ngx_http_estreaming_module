@@ -178,8 +178,8 @@ static ngx_int_t ngx_estreaming_handler(ngx_http_request_t * r) {
     hls_conf_t *mlcf;
     mlcf = ngx_http_get_module_loc_conf(r, ngx_http_estreaming_module);
     if (mlcf->mp4_enhance == 1) {
-        ngx_log_debug1(NGX_LOG_DEBUG_HTTP, log, 0,
-                "examine mp4 filename: \"%V\"", &path);
+        ngx_log_debug1(NGX_LOG_DEBUG, log, 0,
+                "examine mp4 filename: \"%s\"", &path.data);
         if (ngx_http_enable_fast_start(&path, of.fd, r) != NGX_OK) {
             return NGX_HTTP_INTERNAL_SERVER_ERROR;
         }
