@@ -75,12 +75,17 @@ We have to use rewrite module here
 
 ::    
 
-        rewrite ^(.*)/(adbr)/([0-9]+p)/([0-9]+)/(.*) $1/$5?video=$4&$2=true&vr=$3 last;
-        rewrite ^(.*)/(adbr)/([0-9]+p)/(.*\.m3u8) $1/$4?$2=true&vr=$3 last;
-        rewrite ^(.*)/(org)/(.*\.m3u8) $1/$3?$2=true last;
-        rewrite ^(.*)/(org)/([0-9]+)/(.*\.ts) $1/$4?video=$3&$2=true last;
-        rewrite ^(.*)/([0-9]+)/(.*ts)  $1/$3?video=$2 last;
-        location /upload {
+    #uncomment to use secure_link module
+    #secure_link           $arg_st,$arg_e;
+    #secure_link_md5       "axcDxSVnsGkAKvqhqOh$host$arg_e";
+    #                       if ($secure_link = "")  { return 403; }
+    #               if ($secure_link = "0") { return 410; }
+    rewrite ^(.*)/(adbr)/([0-9]+p)/([0-9]+)/(.*ts)?(.*) $1/$5?video=$4&$2=true&vr=$3&$6 last;
+    rewrite ^(.*)/(adbr)/([0-9]+p)/(.*\.m3u8)?(.*) $1/$4?$2=true&vr=$3&$5 last;
+    rewrite ^(.*)/(org)/(.*\.m3u8)?(.*) $1/$3?$2=true&$6 last;
+    rewrite ^(.*)/(org)/([0-9]+)/(.*\.ts)?(.*) $1/$4?video=$3&$2=true&$5 last;
+    rewrite ^(.*)/([0-9]+)/(.*ts)?(.*)  $1/$3?video=$2&$4 last;
+    location /upload {
             streaming;
             error_log /data/log/error.log ;
             root   /data/demo;
