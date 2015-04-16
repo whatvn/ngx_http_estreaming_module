@@ -82,6 +82,7 @@ static ngx_int_t ngx_estreaming_handler(ngx_http_request_t * r) {
     if (r->uri.data[r->uri.len - 1] == '/')
         return NGX_DECLINED;
 
+    
     rc = ngx_http_discard_request_body(r);
 
     if (rc != NGX_OK)
@@ -127,7 +128,6 @@ static ngx_int_t ngx_estreaming_handler(ngx_http_request_t * r) {
     strcpy(ext, ".mp4");
     path.len = ((u_char *) ext - path.data) + 4;
     path.data[path.len] = '\0';
-
     clcf = ngx_http_get_module_loc_conf(r, ngx_http_core_module);
     ngx_memzero(&of, sizeof (ngx_open_file_info_t));
     of.read_ahead = clcf->read_ahead;

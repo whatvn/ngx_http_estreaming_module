@@ -96,30 +96,30 @@ int mp4_create_m3u8(struct mp4_context_t *mp4_context, struct bucket_t * bucket,
         p = ngx_sprintf(p, "#EXT-X-ALLOW-CACHE:NO\n");
         if (width >= 1920) {
             p = ngx_sprintf(p, "#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=1560000,RESOLUTION=640x360,CODECS=\"mp4a.40.2, avc1.4d4015\"\n");
-            p = ngx_sprintf(p, "adbr/360p/%s.m3u8\n", filename);
+            p = ngx_sprintf(p, "adbr/360p/%s.m3u8%s\n", filename, extra);
             p = ngx_sprintf(p, "#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=3120000,RESOLUTION=854x480,CODECS=\"mp4a.40.2, avc1.4d4015\"\n");
-            p = ngx_sprintf(p, "adbr/480p/%s.m3u8\n", filename);
+            p = ngx_sprintf(p, "adbr/480p/%s.m3u8%s\n", filename, extra);
             p = ngx_sprintf(p, "#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=5120000,RESOLUTION=1280x720,CODECS=\"mp4a.40.2, avc1.4d4015\"\n");
-            p = ngx_sprintf(p, "adbr/720p/%s.m3u8\n", filename);
+            p = ngx_sprintf(p, "adbr/720p/%s.m3u8%s\n", filename, extra);
             p = ngx_sprintf(p, "#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=7680000,RESOLUTION=1920x1080,CODECS=\"mp4a.40.2, avc1.4d4015\"\n");
-            p = ngx_sprintf(p, "org/%s.m3u8\n", filename);
+            p = ngx_sprintf(p, "org/%s.m3u8%s\n", filename, extra);
 
         } else if (width >= 1280) {
             p = ngx_sprintf(p, "#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=1560000,RESOLUTION=640x360,CODECS=\"mp4a.40.2, avc1.4d4015\"\n");
-            p = ngx_sprintf(p, "adbr/360p/%s.m3u8\n", filename);
+            p = ngx_sprintf(p, "adbr/360p/%s.m3u8%s\n", filename, extra);
             p = ngx_sprintf(p, "#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=3120000,RESOLUTION=854x480,CODECS=\"mp4a.40.2, avc1.4d4015\"\n");
-            p = ngx_sprintf(p, "adbr/480p/%s.m3u8\n", filename);
+            p = ngx_sprintf(p, "adbr/480p/%s.m3u8%s\n", filename, extra);
             p = ngx_sprintf(p, "#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=5120000,RESOLUTION=1280x720,CODECS=\"mp4a.40.2, avc1.4d4015\"\n");
-            p = ngx_sprintf(p, "org/%s.m3u8\n", filename);
+            p = ngx_sprintf(p, "org/%s.m3u8%s\n", filename,extra);
 
         } else if (width >= 854) {
             p = ngx_sprintf(p, "#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=1560000,RESOLUTION=640x360,CODECS=\"mp4a.40.2, avc1.4d4015\"\n");
-            p = ngx_sprintf(p, "adbr/360p/%s.m3u8\n", filename);
+            p = ngx_sprintf(p, "adbr/360p/%s.m3u8%s\n", filename);
             p = ngx_sprintf(p, "#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=3120000,RESOLUTION=854x480,CODECS=\"mp4a.40.2, avc1.4d4015\"\n");
-            p = ngx_sprintf(p, "org/%s.m3u8\n", filename);
+            p = ngx_sprintf(p, "org/%s.m3u8%s\n", filename, extra);
         } else {
             p = ngx_sprintf(p, "#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=1560000,RESOLUTION=640x360,CODECS=\"mp4a.40.2, avc1.4d4015\"\n");
-            p = ngx_sprintf(p, "org/%s.m3u8\n", filename);
+            p = ngx_sprintf(p, "org/%s.m3u8%s\n", filename, extra);
         }
         result = 1;
     } else {
@@ -169,8 +169,8 @@ int mp4_create_m3u8(struct mp4_context_t *mp4_context, struct bucket_t * bucket,
         }
         if (options->adbr)
             query_string = replace_str(extra, "adbr=true&", "");
-        if (options->org) {
-            query_string = replace_str(query_string, "org=true", "");
+        else if (options->org) {
+            query_string = replace_str(extra, "org=true", "");
         }
         switch (options->video_resolution) {
             case R_360P:
@@ -188,7 +188,9 @@ int mp4_create_m3u8(struct mp4_context_t *mp4_context, struct bucket_t * bucket,
                 break;
         }
         /* use ngx_strstr instead of strstr */
-        if (ngx_strstr(query_string, "?&")) query_string = replace_str(query_string, "?&", "?");
+        while (ngx_strstr(query_string, "?&")) {
+            query_string = replace_str(query_string, "?&", "?");
+        }
         if (ngx_strlen(query_string) == 1) {
             query_string = "";
         }
