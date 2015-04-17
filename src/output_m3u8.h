@@ -167,11 +167,12 @@ int mp4_create_m3u8(struct mp4_context_t *mp4_context, struct bucket_t * bucket,
             strcat(rewrite, (const char *) clcf->name.data);
             strcat(rewrite, "/org");
         }
-        if (options->adbr)
+        if (options->adbr) {
             query_string = replace_str(extra, "adbr=true&", "");
-        else if (options->org) {
+        } else if (options->org) {
             query_string = replace_str(extra, "org=true", "");
         }
+        
         switch (options->video_resolution) {
             case R_360P:
                 query_string = replace_str(query_string, "vr=360p", "");
@@ -198,7 +199,6 @@ int mp4_create_m3u8(struct mp4_context_t *mp4_context, struct bucket_t * bucket,
         samples_t *cur = trak->samples_;
         samples_t *prev = cur;
         samples_t *last = trak->samples_ + trak->samples_size_ + 1;
-        //        p = ngx_sprintf(p, "#EXT-X-TARGETDURATION:%ud\n", conf->length);
         p = ngx_sprintf(p, "#EXT-X-TARGETDURATION:%ud\n", conf->length + 3);
         p = ngx_sprintf(p, "#EXT-X-MEDIA-SEQUENCE:0\n");
         p = ngx_sprintf(p, "#EXT-X-VERSION:4\n");
