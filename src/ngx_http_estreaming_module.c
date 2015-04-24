@@ -95,6 +95,15 @@ static ngx_int_t ngx_estreaming_handler(ngx_http_request_t * r) {
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
     
+    #if (NGX_HTTP_CACHE)
+    if (r->cache) {
+        if (((r->headers_out.status == NGX_HTTP_OK) || (r->headers_out.status == NGX_HTTP_NOT_MODIFIED)) && r->cache->exists && !r->cache->updating) {
+        } else {
+            return NGX_OK;
+        }
+    }
+    #endif
+    
     if (r->args.len && !mp4_split_options_set(r, options, (const char *) r->args.data, r->args.len)) {
         mp4_split_options_exit(r, options);
         return NGX_DECLINED;
@@ -259,7 +268,7 @@ static ngx_int_t ngx_estreaming_handler(ngx_http_request_t * r) {
                 stream = fmt_ctx->streams[i];
                 codec_ctx = stream->codec;
                 if (codec_ctx->codec_type == AVMEDIA_TYPE_VIDEO) {
-                    av_log(NULL, AV_LOG_ERROR, "source video w:%d", codec_ctx->width);
+                    av_log(NULL, AV_LOG_INFO, "source video w:%d", codec_ctx->width);
                     if (video_width == 0) {
                         video_width = codec_ctx->width;
                     } else if ((video_width != 0) && (video_width < codec_ctx->width)) {
