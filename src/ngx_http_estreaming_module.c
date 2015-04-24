@@ -214,6 +214,7 @@ static ngx_int_t ngx_estreaming_handler(ngx_http_request_t * r) {
         AVFormatContext *fmt_ctx = NULL;
         unsigned int i;
         av_register_all();
+        
         if ((ret = avformat_open_input(&fmt_ctx, (const char*) path.data, NULL, NULL)) < 0) {
             mp4_split_options_exit(r, options);
             mp4_close(mp4_context);
@@ -259,7 +260,8 @@ static ngx_int_t ngx_estreaming_handler(ngx_http_request_t * r) {
                 stream = fmt_ctx->streams[i];
                 codec_ctx = stream->codec;
                 if (codec_ctx->codec_type == AVMEDIA_TYPE_VIDEO) {
-                    av_log(NULL, AV_LOG_INFO, "source video w:%d", codec_ctx->width);
+                    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, nlog, 0,
+                        "source video w:%d", codec_ctx->width);
                     if (video_width == 0) {
                         video_width = codec_ctx->width;
                     } else if ((video_width != 0) && (video_width < codec_ctx->width)) {
