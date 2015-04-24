@@ -95,15 +95,6 @@ static ngx_int_t ngx_estreaming_handler(ngx_http_request_t * r) {
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
     
-    #if (NGX_HTTP_CACHE)
-    if (r->cache) {
-        if (((r->headers_out.status == NGX_HTTP_OK) || (r->headers_out.status == NGX_HTTP_NOT_MODIFIED)) && r->cache->exists && !r->cache->updating) {
-        } else {
-            return NGX_OK;
-        }
-    }
-    #endif
-    
     if (r->args.len && !mp4_split_options_set(r, options, (const char *) r->args.data, r->args.len)) {
         mp4_split_options_exit(r, options);
         return NGX_DECLINED;
