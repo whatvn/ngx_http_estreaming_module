@@ -136,7 +136,11 @@ ngx_open_file_cached_fd, ngx_http_request_t *r) {
         
         if (atom_type == FTYP_ATOM) {
             ftyp_atom_size = atom_size;
-            free(ftyp_atom);
+            
+            if (ftyp_atom) {
+                ngx_pfree(r->connection->pool, ftyp_atom);
+            }
+            
             ftyp_atom = ngx_palloc(r->connection->pool, ftyp_atom_size);
             //            ftyp_atom = malloc(ftyp_atom_size);
             
@@ -241,8 +245,10 @@ ngx_open_file_cached_fd, ngx_http_request_t *r) {
     if (BE_32(&moov_atom[12]) == CMOV_ATOM) {
         ngx_log_error(NGX_LOG_ERR, log, ngx_errno, "this module does "
                 "not support compressed moov atoms yet\n");
-        free(ftyp_atom);
-        if (moov_atom) free(moov_atom);
+        ngx_pfree(r->connection->pool, ftyp_atom);
+        if (moov_atom) {
+            ngx_pfree(r->connection->pool, moov_atom);
+        }
         /* should not return error, if we cannot fix it, 
          * let player download the whole file then play it*/
         return NGX_OK;
