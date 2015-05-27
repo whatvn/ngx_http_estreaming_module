@@ -638,7 +638,7 @@ static ngx_int_t mp4_read(mp4_context_t *mp4_context, u_char **buffer, size_t si
     if(pos != pos_align) mp4_context->buffer_size += 4096;
 
     if(pos_align + (off_t)mp4_context->buffer_size > mp4_context->filesize) {
-        if(mp4_context->buffer_size - pos_align < 0) {
+        if(mp4_context->filesize - pos_align < 0) {
             return NGX_ERROR;
         }
         mp4_context->buffer_size = (size_t)(mp4_context->filesize - pos_align);
