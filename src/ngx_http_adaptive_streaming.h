@@ -802,3 +802,13 @@ end:
     //    }
     return ret ? 1 : 0;
 }
+
+//static ngx_str_t *ngx_http_estreaming_create_str(ngx_http_request_t *req, uint len) {
+//    ngx_str_t *aux = (ngx_str_t *) ngx_pcalloc(req->pool, sizeof(ngx_str_t) + len + 1);
+//    if (aux != NULL) {
+//        aux->data = (u_char *) (aux + 1);
+//        aux->len = len;
+//        ngx_memset(aux->data, '\0', len + 1);
+//    }
+//    return aux;
+//}

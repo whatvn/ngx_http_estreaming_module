@@ -638,6 +638,9 @@ static ngx_int_t mp4_read(mp4_context_t *mp4_context, u_char **buffer, size_t si
     if(pos != pos_align) mp4_context->buffer_size += 4096;
 
     if(pos_align + (off_t)mp4_context->buffer_size > mp4_context->filesize) {
+        if(mp4_context->buffer_size - pos_align < 0) {
+            return NGX_ERROR;
+        }
         mp4_context->buffer_size = (size_t)(mp4_context->filesize - pos_align);
     }
 
@@ -765,7 +768,6 @@ static void mp4_context_exit(struct mp4_context_t *mp4_context) {
 static mp4_context_t *mp4_open(ngx_http_request_t *r, ngx_file_t *file, int64_t filesize, mp4_open_flags flags) {
   mp4_context_t *mp4_context = mp4_context_init(r, file, filesize);
   if(!mp4_context) return 0;
-
   while(!mp4_context->moov_atom.size_ || !mp4_context->mdat_atom.size_) {
     struct mp4_atom_t leaf_atom;
 
