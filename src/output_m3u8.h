@@ -69,10 +69,15 @@ int mp4_create_m3u8(struct mp4_context_t *mp4_context, struct bucket_t * bucket,
     hhttp://221.132.35.210:9090/vod/hai.m3u8
      */
     p = ngx_sprintf(p, "#EXTM3U\n");
-    char *rewrite;
-    rewrite = (char *) ngx_palloc(mp4_context->r->pool,
-            ngx_strlen(mp4_context->file->name.data) +
-            ngx_strlen(mp4_context->r->headers_in.server.data) - mp4_context->root + 7);
+    if (conf->hls_proxy.data == NULL) {
+        rewrite = (char *) ngx_palloc(mp4_context->r->pool,
+                ngx_strlen(mp4_context->file->name.data) +
+                ngx_strlen(mp4_context->r->headers_in.server.data) - mp4_context->root + 7);
+    } else {
+        rewrite = (char *) ngx_palloc(mp4_context->r->pool,
+                ngx_strlen(conf->hls_proxy.data) + ngx_strlen(mp4_context->file->name.data) +
+                ngx_strlen(mp4_context->r->headers_in.server.data) - mp4_context->root + 7);
+    }
     char *filename;
     if (!conf->relative) {
         filename = (char *) ngx_palloc(mp4_context->r->pool, ngx_strlen(mp4_context->file->name.data) + ngx_strlen(mp4_context->r->headers_in.server.data) - mp4_context->root + 7);
@@ -159,18 +164,22 @@ int mp4_create_m3u8(struct mp4_context_t *mp4_context, struct bucket_t * bucket,
         /* if proxy address is provided, use it
          * can be use proxy address to point request to redirect (CDN) server
          */
-        if (conf->hls_proxy.data != NULL) {
+       if (conf->hls_proxy.data != NULL) {
             ngx_http_core_loc_conf_t *clcf;
             clcf = ngx_http_get_module_loc_conf(mp4_context->r, ngx_http_core_module);
             strcpy(rewrite, "http://");
             strcat(rewrite, (const char *) conf->hls_proxy.data);
-            strcat(rewrite, (const char *) clcf->name.data);
-            strcat(rewrite, "/org");
-        }
-        if (options->adbr) {
-            query_string = replace_str(extra, "adbr=true&", "");
-        } else if (options->org) {
-            query_string = replace_str(extra, "org=true", "");
+
+            if (ngx_strlen((char *) clcf->name.data) > 1) {
+                strcat(rewrite, (const char *) clcf->name.data);
+            }
+            if (options->adbr) {
+                query_string = replace_str(extra, "adbr=true&", "");
+                strcat(rewrite, "/adbr");
+            } else {
+                query_string = replace_str(extra, "org=true", "");
+                strcat(rewrite, "/org");
+            }
         }
         
         switch (options->video_resolution) {
