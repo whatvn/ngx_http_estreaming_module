@@ -1,0 +1,4 @@
+1. Android devices still have great problem with hls, and dash also. What could be the problem should be figured out? 
+2. Adaptive streaming using on-the-fly transcoding is nice function, but it uses too much cpu resources, what should we do to improve speed with less cpu resouce usage?
+3. Add new function to not to use transcoding but still support adaptive bitrate (implement already)
+
