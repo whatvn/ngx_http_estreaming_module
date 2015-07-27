@@ -68,6 +68,7 @@ int mp4_create_m3u8(struct mp4_context_t *mp4_context, struct bucket_t * bucket,
     #EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=7680000, RESOLUTION=1080x720
     hhttp://221.132.35.210:9090/vod/hai.m3u8
      */
+    char *rewrite;
     p = ngx_sprintf(p, "#EXTM3U\n");
     if (conf->hls_proxy.data == NULL) {
         rewrite = (char *) ngx_palloc(mp4_context->r->pool,
