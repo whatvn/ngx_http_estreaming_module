@@ -98,7 +98,7 @@ int mp4_create_m3u8(struct mp4_context_t *mp4_context, struct bucket_t * bucket,
     if (!moov_build_index(mp4_context, mp4_context->moov)) return 0;
     moov_t const *moov = mp4_context->moov;
     if (!options->adbr && !options->org) {
-//        printf("Request for master playlist\n");
+        //        printf("Request for master playlist\n");
         p = ngx_sprintf(p, "#EXT-X-ALLOW-CACHE:NO\n");
         if (width >= 1920) {
             p = ngx_sprintf(p, "#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=1560000,RESOLUTION=640x360,CODECS=\"mp4a.40.2, avc1.4d4015\"\n");
@@ -116,7 +116,7 @@ int mp4_create_m3u8(struct mp4_context_t *mp4_context, struct bucket_t * bucket,
             p = ngx_sprintf(p, "#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=3120000,RESOLUTION=854x480,CODECS=\"mp4a.40.2, avc1.4d4015\"\n");
             p = ngx_sprintf(p, "adbr/480p/%s.m3u8%s\n", filename, extra);
             p = ngx_sprintf(p, "#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=5120000,RESOLUTION=1280x720,CODECS=\"mp4a.40.2, avc1.4d4015\"\n");
-            p = ngx_sprintf(p, "org/%s.m3u8%s\n", filename,extra);
+            p = ngx_sprintf(p, "org/%s.m3u8%s\n", filename, extra);
 
         } else if (width >= 854) {
             p = ngx_sprintf(p, "#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=1560000,RESOLUTION=640x360,CODECS=\"mp4a.40.2, avc1.4d4015\"\n");
@@ -165,7 +165,7 @@ int mp4_create_m3u8(struct mp4_context_t *mp4_context, struct bucket_t * bucket,
         /* if proxy address is provided, use it
          * can be use proxy address to point request to redirect (CDN) server
          */
-       if (conf->hls_proxy.data != NULL) {
+        if (conf->hls_proxy.data != NULL) {
             ngx_http_core_loc_conf_t *clcf;
             clcf = ngx_http_get_module_loc_conf(mp4_context->r, ngx_http_core_module);
             strcpy(rewrite, "http://");
@@ -174,15 +174,16 @@ int mp4_create_m3u8(struct mp4_context_t *mp4_context, struct bucket_t * bucket,
             if (ngx_strlen((char *) clcf->name.data) > 1) {
                 strcat(rewrite, (const char *) clcf->name.data);
             }
-            if (options->adbr) {
-                query_string = replace_str(extra, "adbr=true&", "");
-                strcat(rewrite, "/adbr");
-            } else {
-                query_string = replace_str(extra, "org=true", "");
-                strcat(rewrite, "/org");
-            }
         }
         
+        if (options->adbr) {
+            query_string = replace_str(extra, "adbr=true&", "");
+            strcat(rewrite, "/adbr");
+        } else {
+            query_string = replace_str(extra, "org=true", "");
+            strcat(rewrite, "/org");
+        }
+
         switch (options->video_resolution) {
             case R_360P:
                 query_string = replace_str(query_string, "vr=360p", "");
@@ -212,7 +213,7 @@ int mp4_create_m3u8(struct mp4_context_t *mp4_context, struct bucket_t * bucket,
         p = ngx_sprintf(p, "#EXT-X-TARGETDURATION:%ud\n", conf->length + 3);
         p = ngx_sprintf(p, "#EXT-X-MEDIA-SEQUENCE:0\n");
         p = ngx_sprintf(p, "#EXT-X-VERSION:4\n");
-//        p = ngx_sprintf(p, "#EXT-X-VERSION:3\n");
+        //        p = ngx_sprintf(p, "#EXT-X-VERSION:3\n");
         uint32_t i = 0, prev_i = 0;
         while (cur != last) {
             if (!cur->is_smooth_ss_) {
@@ -221,7 +222,7 @@ int mp4_create_m3u8(struct mp4_context_t *mp4_context, struct bucket_t * bucket,
             }
             if (prev != cur) {
                 float duration = (float) ((cur->pts_ - prev->pts_) / (float) trak->mdia_->mdhd_->timescale_) + 0.0005;
-                if (duration >=  (float) conf->length || cur + 1 == last) {
+                if (duration >= (float) conf->length || cur + 1 == last) {
                     p = ngx_sprintf(p, "#EXTINF:%.3f,\n", duration);
                     if (conf->hls_proxy.data != NULL) {
                         p = ngx_sprintf(p, "%s/%uD/%s.ts%s\n", rewrite, prev_i, filename, query_string);
