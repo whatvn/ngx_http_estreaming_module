@@ -287,7 +287,9 @@ static int prepare_output_encoder(ngx_http_request_t *req, video_buffer *destina
             enc_ctx->me_cmp = 1;
             enc_ctx->me_range = 16;
             enc_ctx->scenechange_threshold = 0;
+#if !(LIBAVCODEC_VERSION_MAJOR > 56) || !(LIBAVCODEC_VERSION_MINOR >8)
             enc_ctx->me_method = ME_ITER;
+#endif
             enc_ctx->me_subpel_quality = 4;
             enc_ctx->i_quant_factor = 1;
             enc_ctx->qcompress = 0;

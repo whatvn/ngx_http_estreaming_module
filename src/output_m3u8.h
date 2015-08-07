@@ -92,7 +92,6 @@ int mp4_create_m3u8(struct mp4_context_t *mp4_context, struct bucket_t * bucket,
     }
 
     char *ext = strrchr(filename, '.');
-
     *ext = 0;
     // get video width, height
     if (!moov_build_index(mp4_context, mp4_context->moov)) return 0;
@@ -129,7 +128,8 @@ int mp4_create_m3u8(struct mp4_context_t *mp4_context, struct bucket_t * bucket,
         }
         result = 1;
     } else {
-        printf("Request for child playlist, resolution: %d\n", options->video_resolution);
+//        printf("Request for child playlist, resolution: %d\n", options->video_resolution);
+//        printf("filename %s\n", filename);
         // http://developer.apple.com/library/ios/#technotes/tn2288/_index.html
         //    if (!options->fragment_track_id) {
         //        unsigned int audio_tracks;
