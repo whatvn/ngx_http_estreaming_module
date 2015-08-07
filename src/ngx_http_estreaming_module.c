@@ -15,13 +15,13 @@
 #include "mp4_module.h"
 #include "ngx_http_mp4_faststart.h"
 
+
 static void *ngx_http_hls_create_conf(ngx_conf_t * cf) {
     hls_conf_t *conf;
     conf = ngx_pcalloc(cf->pool, sizeof (hls_conf_t));
     if (conf == NULL) {
         return NULL;
     }
-
     /*
      * set by ngx_pcalloc():
      *
@@ -42,10 +42,10 @@ static void *ngx_http_hls_create_conf(ngx_conf_t * cf) {
     return conf;
 }
 
+
 static char *ngx_http_hls_merge_conf(ngx_conf_t *cf, void *parent, void *child) {
     hls_conf_t *prev = parent;
     hls_conf_t *conf = child;
-
     ngx_conf_merge_uint_value(conf->length, prev->length, 8);
     ngx_conf_merge_value(conf->relative, prev->relative, 1);
     ngx_conf_merge_size_value(conf->buffer_size, prev->buffer_size, 512 * 1024);
@@ -82,7 +82,6 @@ static ngx_int_t ngx_estreaming_handler(ngx_http_request_t * r) {
     if (r->uri.data[r->uri.len - 1] == '/')
         return NGX_DECLINED;
 
-    
     rc = ngx_http_discard_request_body(r);
 
     if (rc != NGX_OK)
@@ -99,18 +98,14 @@ static ngx_int_t ngx_estreaming_handler(ngx_http_request_t * r) {
         mp4_split_options_exit(r, options);
         return NGX_DECLINED;
     }
-
-
     if (!options) return NGX_DECLINED;
-
     ngx_log_t * nlog = r->connection->log;
-
     struct bucket_t * bucket = bucket_init(r);
     int result = 0;
-
     u_int m3u8 = 0, len_ = 0;
     int64_t duration = 0;
 
+    
     if (ngx_memcmp(r->exten.data, "mp4", r->exten.len) == 0) {
         return ngx_http_mp4_handler(r);
     } else if (ngx_memcmp(r->exten.data, "m3u8", r->exten.len) == 0) {
@@ -164,7 +159,6 @@ static ngx_int_t ngx_estreaming_handler(ngx_http_request_t * r) {
         return rc;
     }
 
-
     if (!of.is_file) {
         mp4_split_options_exit(r, options);
         if (ngx_close_file(of.fd) == NGX_FILE_ERROR) {
@@ -173,7 +167,6 @@ static ngx_int_t ngx_estreaming_handler(ngx_http_request_t * r) {
         }
         return NGX_DECLINED;
     }
-
     /* move atom to beginning of file if it's in the last*/
     hls_conf_t *mlcf;
     mlcf = ngx_http_get_module_loc_conf(r, ngx_http_estreaming_module);
@@ -183,11 +176,9 @@ static ngx_int_t ngx_estreaming_handler(ngx_http_request_t * r) {
         if (ngx_http_enable_fast_start(&path, of.fd, r) != NGX_OK) {
             return NGX_HTTP_INTERNAL_SERVER_ERROR;
         }
-
     }
 
     ngx_file_t *file = ngx_pcalloc(r->pool, sizeof (ngx_file_t));
-
     if (file == NULL) {
         mp4_split_options_exit(r, options);
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
@@ -275,7 +266,7 @@ static ngx_int_t ngx_estreaming_handler(ngx_http_request_t * r) {
         }
         // finish getting video width
 no_ffmpeg:
-        if ((result = mp4_create_m3u8(mp4_context, bucket, options, video_width))) {
+        if ((result = mp4_create_m3u8(mp4_context, bucket, options, video_width, path))) {
             char action[50];
             sprintf(action, "ios_playlist&segments=%d", result);
             view_count(mp4_context, (char *) path.data, options ? options->hash : NULL, action);
@@ -288,6 +279,7 @@ no_ffmpeg:
             ngx_log_error(NGX_LOG_ALERT, nlog, ngx_errno, "output_ts failed");
             return NGX_HTTP_INTERNAL_SERVER_ERROR;
         }
+        
         if (options->adbr) {
             destination = ngx_pcalloc(r->pool, sizeof (video_buffer));
             destination->data = NULL;
@@ -348,9 +340,7 @@ response:
 static char *ngx_estreaming(ngx_conf_t *cf, ngx_command_t *cmd, void *conf) {
     ngx_http_core_loc_conf_t *clcf =
             ngx_http_conf_get_module_loc_conf(cf, ngx_http_core_module);
-
     clcf->handler = ngx_estreaming_handler;
-
     return NGX_CONF_OK;
 }
 

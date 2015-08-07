@@ -14,45 +14,38 @@
 #define R_480P 2
 #define R_720P 3
 
-char *replace_str(char *str, char *old, char *new) {
-    char *ret, *r;
-    char *p, *q;
-    /* use ngx_strlen instead of strlen*/
-    size_t oldlen = ngx_strlen(old);
-    size_t count, retlen, newlen = ngx_strlen(new);
+void replace(char * o_string, char * s_string, char * r_string) {
+    //a buffer variable to do all replace things
+    char buffer[20];
+    //to store the pointer returned from strstr
+    char * ch;
 
-    if (oldlen != newlen) {
-        /* use ngx_strstr instead of strstr*/
-        for (count = 0, p = str; (q = ngx_strstr(p, old)) != NULL; p = q + oldlen)
-            count++;
-        /* this is undefined if p - str > PTRDIFF_MAX */
-        retlen = p - str + ngx_strlen(p) + count * (newlen - oldlen);
-    } else
-        retlen = ngx_strlen(str);
+    //first exit condition
+    if (!(ch = strstr(o_string, s_string)))
+        return;
 
-    if ((ret = malloc(retlen + 1)) == NULL)
-        return NULL;
+    //copy all the content to buffer before the first occurrence of the search string
+    strncpy(buffer, o_string, ch - o_string);
 
-    /* use ngx_strstr instead of strstr*/
-    for (r = ret, p = str; (q = ngx_strstr(p, old)) != NULL; p = q + oldlen) {
-        /* this is undefined if q - p > PTRDIFF_MAX */
-        ptrdiff_t l = q - p;
-        ngx_memcpy(r, p, l);
-        r += l;
-        /* use ngx_memcpy instead of memcpy */
-        ngx_memcpy(r, new, newlen);
-        r += newlen;
-    }
-    strcpy(r, p);
+    //prepare the buffer for appending by adding a null to the end of it
+    buffer[ch - o_string] = 0;
 
-    return ret;
+    //append using sprintf function
+    sprintf(buffer + (ch - o_string), "%s%s", r_string, ch + strlen(s_string));
+
+    //empty o_string for copying
+    o_string[0] = 0;
+    strcpy(o_string, buffer);
+    //pass recursively to replace other occurrences
+    return replace(o_string, s_string, r_string);
 }
 
 int mp4_create_m3u8(struct mp4_context_t *mp4_context, struct bucket_t * bucket,
-        struct mp4_split_options_t *options, int width) {
+        struct mp4_split_options_t *options, int width, ngx_str_t path) {
     hls_conf_t *conf = ngx_http_get_module_loc_conf(mp4_context->r, ngx_http_estreaming_module);
     int result = 0;
-    u_char *buffer = (u_char *) ngx_palloc(mp4_context->r->pool, 1024 * 256);
+    u_char *buffer = NULL;
+    buffer = (u_char *) ngx_palloc(mp4_context->r->pool, 1024 * 256);
     u_char *p = buffer;
     char extra[100] = "";
     if (mp4_context->r->args.data) {
@@ -68,18 +61,14 @@ int mp4_create_m3u8(struct mp4_context_t *mp4_context, struct bucket_t * bucket,
     #EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=7680000, RESOLUTION=1080x720
     hhttp://221.132.35.210:9090/vod/hai.m3u8
      */
-    char *rewrite;
+    char *rewrite = NULL;
     p = ngx_sprintf(p, "#EXTM3U\n");
-    if (conf->hls_proxy.data == NULL) {
-        rewrite = (char *) ngx_palloc(mp4_context->r->pool,
-                ngx_strlen(mp4_context->file->name.data) +
-                ngx_strlen(mp4_context->r->headers_in.server.data) - mp4_context->root + 7);
-    } else {
+    if (conf->hls_proxy.data != NULL) {
         rewrite = (char *) ngx_palloc(mp4_context->r->pool,
                 ngx_strlen(conf->hls_proxy.data) + ngx_strlen(mp4_context->file->name.data) +
                 ngx_strlen(mp4_context->r->headers_in.server.data) - mp4_context->root + 7);
     }
-    char *filename;
+    char *filename = NULL;
     if (!conf->relative) {
         filename = (char *) ngx_palloc(mp4_context->r->pool, ngx_strlen(mp4_context->file->name.data) + ngx_strlen(mp4_context->r->headers_in.server.data) - mp4_context->root + 7);
         strcpy(filename, "http://");
@@ -90,14 +79,12 @@ int mp4_create_m3u8(struct mp4_context_t *mp4_context, struct bucket_t * bucket,
         filename = (char *) ngx_palloc(mp4_context->r->pool, name - (const char *) mp4_context->file->name.data);
         strcpy(filename, (const char *) name);
     }
-
     char *ext = strrchr(filename, '.');
     *ext = 0;
     // get video width, height
     if (!moov_build_index(mp4_context, mp4_context->moov)) return 0;
     moov_t const *moov = mp4_context->moov;
     if (!options->adbr && !options->org) {
-        //        printf("Request for master playlist\n");
         p = ngx_sprintf(p, "#EXT-X-ALLOW-CACHE:NO\n");
         if (width >= 1920) {
             p = ngx_sprintf(p, "#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=1560000,RESOLUTION=640x360,CODECS=\"mp4a.40.2, avc1.4d4015\"\n");
@@ -128,8 +115,6 @@ int mp4_create_m3u8(struct mp4_context_t *mp4_context, struct bucket_t * bucket,
         }
         result = 1;
     } else {
-//        printf("Request for child playlist, resolution: %d\n", options->video_resolution);
-//        printf("filename %s\n", filename);
         // http://developer.apple.com/library/ios/#technotes/tn2288/_index.html
         //    if (!options->fragment_track_id) {
         //        unsigned int audio_tracks;
@@ -161,7 +146,6 @@ int mp4_create_m3u8(struct mp4_context_t *mp4_context, struct bucket_t * bucket,
         /*
          remove query string as we rewrite it later
          */
-        char *query_string = "";
         /* if proxy address is provided, use it
          * can be use proxy address to point request to redirect (CDN) server
          */
@@ -175,36 +159,40 @@ int mp4_create_m3u8(struct mp4_context_t *mp4_context, struct bucket_t * bucket,
                 strcat(rewrite, (const char *) clcf->name.data);
             }
         }
-        
         if (options->adbr) {
-            query_string = replace_str(extra, "adbr=true&", "");
-            strcat(rewrite, "/adbr");
+            replace(extra, "adbr=true&", "");
+            if (rewrite) {
+                strcat(rewrite, (const char*) "/adbr");
+            }
         } else {
-            query_string = replace_str(extra, "org=true", "");
-            strcat(rewrite, "/org");
+            replace(extra, "org=true", "");
+            if (rewrite) {
+                strcat(rewrite, (const char*) "/org");
+            }
         }
 
         switch (options->video_resolution) {
+
             case R_360P:
-                query_string = replace_str(query_string, "vr=360p", "");
+                replace(extra, "vr=360p", "");
                 if (conf->hls_proxy.data != NULL) strcat(rewrite, "/360p");
                 break;
             case R_480P:
-                query_string = replace_str(query_string, "vr=480p", "");
+                replace(extra, "vr=480p", "");
                 if (conf->hls_proxy.data != NULL) strcat(rewrite, "/480p");
                 //rewrite = "adbr/480p/";
                 break;
             case R_720P:
-                query_string = replace_str(query_string, "vr=720p", "");
+                replace(extra, "vr=720p", "");
                 if (conf->hls_proxy.data != NULL) strcat(rewrite, "/720p");
                 break;
         }
         /* use ngx_strstr instead of strstr */
-        while (ngx_strstr(query_string, "?&")) {
-            query_string = replace_str(query_string, "?&", "?");
+        while (ngx_strstr(extra, "?&")) {
+            replace(extra, "?&", "?");
         }
-        if (ngx_strlen(query_string) == 1) {
-            query_string = "";
+        if (ngx_strlen(extra) == 1) {
+            extra[0] = '\0';
         }
         trak_t const *trak = moov->traks_[0];
         samples_t *cur = trak->samples_;
@@ -225,9 +213,9 @@ int mp4_create_m3u8(struct mp4_context_t *mp4_context, struct bucket_t * bucket,
                 if (duration >= (float) conf->length || cur + 1 == last) {
                     p = ngx_sprintf(p, "#EXTINF:%.3f,\n", duration);
                     if (conf->hls_proxy.data != NULL) {
-                        p = ngx_sprintf(p, "%s/%uD/%s.ts%s\n", rewrite, prev_i, filename, query_string);
+                        p = ngx_sprintf(p, "%s/%uD/%s.ts%s\n", rewrite, prev_i, filename, extra);
                     } else {
-                        p = ngx_sprintf(p, "%uD/%s.ts%s\n", prev_i, filename, query_string);
+                        p = ngx_sprintf(p, "%uD/%s.ts%s\n", prev_i, filename, extra);
                     }
                     prev = cur;
                     prev_i = i;
@@ -240,9 +228,17 @@ int mp4_create_m3u8(struct mp4_context_t *mp4_context, struct bucket_t * bucket,
         p = ngx_sprintf(p, "#EXT-X-ENDLIST\n");
     }
     bucket_insert(bucket, buffer, p - buffer);
-    ngx_pfree(mp4_context->r->pool, buffer);
-    ngx_pfree(mp4_context->r->pool, filename);
-    if (rewrite) ngx_pfree(mp4_context->r->pool, rewrite);
+    /*
+    if (buffer) {
+        ngx_pfree(mp4_context->r->pool, buffer);
+    }
+    if (filename != NULL) {
+        ngx_pfree(mp4_context->r->pool, filename);
+    }
+    if (rewrite != NULL) {
+        ngx_pfree(mp4_context->r->pool, rewrite);
+    }
+     */
     return result;
 }
 
