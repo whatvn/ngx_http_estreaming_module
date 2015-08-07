@@ -1,5 +1,4 @@
-CORE_LIBS="$CORE_LIBS -I /data/include -L /data/lib -lswresample -lavformat -lavcodec -lavutil -lavcodec -lavresample -lavfilter -lrt -lswscale -lz -lm -lbz2
-    /data/lib/libavcodec.a  /data/lib/libavdevice.a  /data/lib/libavfilter.a  /data/lib/libavformat.a  /data/lib/libavresample.a  /data/lib/libavutil.a  /data/lib/libpostproc.a  /data/lib/libswresample.a  /data/lib/libswscale.a /data/lib/libfdk-aac.a /data/lib/libx264.a"
+CORE_LIBS="$CORE_LIBS -lswresample -lavformat -lavcodec -lavutil -lavcodec -lavfilter -lrt -lswscale -lz -lm -lbz2 -lfdk-aac -lx264"
 ngx_addon_name=ngx_http_estreaming_module
 HTTP_AUX_FILTER_MODULES="$HTTP_AUX_FILTER_MODULES ngx_http_estreaming_module"
 CFLAGS="$CFLAGS -ggdb -D_DEBUG -D_LARGEFILE_SOURCE"
