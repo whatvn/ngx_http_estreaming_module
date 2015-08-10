@@ -16,7 +16,8 @@
 
 void replace(char * o_string, char * s_string, char * r_string) {
     //a buffer variable to do all replace things
-    char buffer[20];
+    // we use extra[max=100], we should use safe buffer size here
+    char buffer[100];
     //to store the pointer returned from strstr
     char * ch;
 
