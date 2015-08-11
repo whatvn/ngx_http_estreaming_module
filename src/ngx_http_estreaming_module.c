@@ -15,7 +15,6 @@
 #include "mp4_module.h"
 #include "ngx_http_mp4_faststart.h"
 
-
 static void *ngx_http_hls_create_conf(ngx_conf_t * cf) {
     hls_conf_t *conf;
     conf = ngx_pcalloc(cf->pool, sizeof (hls_conf_t));
