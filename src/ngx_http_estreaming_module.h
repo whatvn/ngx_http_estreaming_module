@@ -96,6 +96,7 @@ typedef struct mp4_context_t mp4_context_t;
 static char *ngx_estreaming(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
 static void *ngx_http_hls_create_conf(ngx_conf_t *cf);
 static char *ngx_http_hls_merge_conf(ngx_conf_t *cf, void *parent, void *child);
+static ngx_int_t ngx_http_hls_initialization();
 
 static ngx_command_t ngx_estreaming_commands[] = {
     { ngx_string("streaming"),
@@ -180,7 +181,8 @@ ngx_module_t ngx_http_estreaming_module = {
     NGX_HTTP_MODULE, /* module type */
     NULL, /* init master */
     NULL, /* init module */
-    NULL, /* init process */
+    //NULL, /* init process */
+    ngx_http_hls_initialization,
     NULL, /* init thread */
     NULL, /* exit thread */
     NULL, /* exit process */

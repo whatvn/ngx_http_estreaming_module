@@ -38,6 +38,13 @@ static void *ngx_http_hls_create_conf(ngx_conf_t * cf) {
     return conf;
 }
 
+static ngx_int_t ngx_http_hls_initialization() {
+    av_register_all();
+    avfilter_register_all();
+    av_log_set_level(AV_LOG_ERROR);
+    return NGX_OK;
+}
+
 static char *ngx_http_hls_merge_conf(ngx_conf_t *cf, void *parent, void *child) {
     hls_conf_t *prev = parent;
     hls_conf_t *conf = child;
@@ -193,7 +200,7 @@ static ngx_int_t ngx_estreaming_handler(ngx_http_request_t * r) {
         if ((m3u8) && (options->adbr || options->org)) goto no_ffmpeg;
         AVFormatContext *fmt_ctx = NULL;
         unsigned int i;
-        av_register_all();
+//        av_register_all();
         if ((ret = avformat_open_input(&fmt_ctx, (const char*) path.data, NULL, NULL)) < 0) {
             mp4_split_options_exit(r, options);
             mp4_close(mp4_context);
