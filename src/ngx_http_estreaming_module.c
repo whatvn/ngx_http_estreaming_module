@@ -2,7 +2,6 @@
  ngx_http_estreaming - An Nginx module for http adaptive live streaming 
  ******************************************************************************/
 
-
 #include "ngx_http_estreaming_module.h"
 #include "mp4_io.h"
 #include "mp4_reader.h"
@@ -28,7 +27,6 @@ static void *ngx_http_hls_create_conf(ngx_conf_t * cf) {
      *     conf->server_names = 0;
      *     conf->keys = NULL;
      */
-
     conf->length = NGX_CONF_UNSET_UINT;
     conf->relative = NGX_CONF_UNSET;
     conf->buffer_size = NGX_CONF_UNSET_SIZE;
@@ -37,10 +35,8 @@ static void *ngx_http_hls_create_conf(ngx_conf_t * cf) {
     conf->hls_proxy.len = 0;
     conf->mp4_buffer_size = NGX_CONF_UNSET_SIZE;
     conf->mp4_max_buffer_size = NGX_CONF_UNSET_SIZE;
-
     return conf;
 }
-
 
 static char *ngx_http_hls_merge_conf(ngx_conf_t *cf, void *parent, void *child) {
     hls_conf_t *prev = parent;
@@ -62,7 +58,6 @@ static char *ngx_http_hls_merge_conf(ngx_conf_t *cf, void *parent, void *child) 
                 "video length must be equal or more than 1");
         return NGX_CONF_ERROR;
     }
-
     return NGX_CONF_OK;
 }
 
@@ -87,12 +82,12 @@ static ngx_int_t ngx_estreaming_handler(ngx_http_request_t * r) {
         return rc;
 
     mp4_split_options_t * options = mp4_split_options_init(r);
-    
+
     if (!ngx_http_map_uri_to_path(r, &path, &root, 1)) {
         mp4_split_options_exit(r, options);
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
-    
+
     if (r->args.len && !mp4_split_options_set(r, options, (const char *) r->args.data, r->args.len)) {
         mp4_split_options_exit(r, options);
         return NGX_DECLINED;
@@ -103,8 +98,6 @@ static ngx_int_t ngx_estreaming_handler(ngx_http_request_t * r) {
     int result = 0;
     u_int m3u8 = 0, len_ = 0;
     int64_t duration = 0;
-
-    
     if (ngx_memcmp(r->exten.data, "mp4", r->exten.len) == 0) {
         return ngx_http_mp4_handler(r);
     } else if (ngx_memcmp(r->exten.data, "m3u8", r->exten.len) == 0) {
@@ -176,35 +169,31 @@ static ngx_int_t ngx_estreaming_handler(ngx_http_request_t * r) {
             return NGX_HTTP_INTERNAL_SERVER_ERROR;
         }
     }
-
     ngx_file_t *file = ngx_pcalloc(r->pool, sizeof (ngx_file_t));
     if (file == NULL) {
         mp4_split_options_exit(r, options);
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
-
     file->fd = of.fd;
     file->name = path;
     file->log = nlog;
     mp4_context_t *mp4_context = mp4_open(r, file, of.size, MP4_OPEN_MOOV);
-
     if (!mp4_context) {
         mp4_split_options_exit(r, options);
         ngx_log_error(NGX_LOG_ALERT, nlog, ngx_errno, "mp4_open failed");
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
-
     mp4_context->root = root;
-
     if (m3u8 || len_) {
         int ret, video_width = 0;
-        // only request for master playlist need to use ffmpeg api to open video
-        // this takes time and cpu, we should avoid it as much as possible 
+        /*
+        only request for master playlist need to use ffmpeg api to open video
+        this takes time and cpu, we should avoid it as much as possible 
+         */
         if ((m3u8) && (options->adbr || options->org)) goto no_ffmpeg;
         AVFormatContext *fmt_ctx = NULL;
         unsigned int i;
         av_register_all();
-        
         if ((ret = avformat_open_input(&fmt_ctx, (const char*) path.data, NULL, NULL)) < 0) {
             mp4_split_options_exit(r, options);
             mp4_close(mp4_context);
@@ -251,11 +240,8 @@ static ngx_int_t ngx_estreaming_handler(ngx_http_request_t * r) {
                 codec_ctx = stream->codec;
                 if (codec_ctx->codec_type == AVMEDIA_TYPE_VIDEO) {
                     ngx_log_debug1(NGX_LOG_DEBUG_HTTP, nlog, 0,
-                        "source video w:%d", codec_ctx->width);
-                    if (video_width == 0) {
-                        video_width = codec_ctx->width;
-                    } else if ((video_width != 0) && (video_width < codec_ctx->width)) {
-                        // has 2 video streams
+                            "source video w:%d", codec_ctx->width);
+                    if (video_width < codec_ctx->width) {
                         video_width = codec_ctx->width;
                     } else
                         break;
@@ -263,7 +249,6 @@ static ngx_int_t ngx_estreaming_handler(ngx_http_request_t * r) {
             }
             avformat_close_input(&fmt_ctx);
         }
-        // finish getting video width
 no_ffmpeg:
         if ((result = mp4_create_m3u8(mp4_context, bucket, options, video_width, path))) {
             char action[50];
@@ -278,13 +263,12 @@ no_ffmpeg:
             ngx_log_error(NGX_LOG_ALERT, nlog, ngx_errno, "output_ts failed");
             return NGX_HTTP_INTERNAL_SERVER_ERROR;
         }
-        
+
         if (options->adbr) {
             destination = ngx_pcalloc(r->pool, sizeof (video_buffer));
             destination->data = NULL;
             destination->len = 0;
             destination->pool = r->pool;
-
             if (ngx_estreaming_adaptive_bitrate(r, bucket->first,
                     destination, options) == NGX_OK) {
                 ngx_buf_t *b = ngx_pcalloc(r->pool, sizeof (ngx_buf_t));
@@ -342,6 +326,5 @@ static char *ngx_estreaming(ngx_conf_t *cf, ngx_command_t *cmd, void *conf) {
     clcf->handler = ngx_estreaming_handler;
     return NGX_CONF_OK;
 }
-
 // End Of File
 
