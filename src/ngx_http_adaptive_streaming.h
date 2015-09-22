@@ -466,11 +466,11 @@ static int init_filter(FilteringContext* fctx, AVCodecContext *dec_ctx,
     fctx->filter_graph = filter_graph;
 
 end:
-    /*
     avfilter_inout_free(&inputs);
     avfilter_inout_free(&outputs);
+    /*
     printf("filter video ok\n");
-     */
+    */
     return ret;
 }
 
@@ -653,9 +653,6 @@ int ngx_estreaming_adaptive_bitrate(ngx_http_request_t *req, ngx_chain_t *chain,
     int height = 360;
     int width = 640;
     int (*dec_func)(AVCodecContext *, AVFrame *, int *, const AVPacket *);
-    av_log_set_level(AV_LOG_ERROR);
-    av_register_all();
-    avfilter_register_all();
     // setup video resolution
     if (options->video_resolution == 3) {
         // 720p
@@ -783,19 +780,18 @@ end:
     if (filter_ctx) av_free(filter_ctx);
     if (io_read_context) av_free(io_read_context);
     if (ifmt_ctx) avformat_close_input(&ifmt_ctx);
-    //    if (chain_memory) {
-    //        ngx_pfree(req->pool, chain_memory);
-    //    }
-    //    if (exchange_area_write) {
-    //        ngx_pfree(req->pool, exchange_area_write);
-    //    }
-    //av_freep(&ofmt_ctx->pb->buffer);
-    //    if (ofmt_ctx && ofmt_ctx->pb && ofmt_ctx->nb_streams > 0) av_freep(&ofmt_ctx->pb);
+    /*
+    if (chain_memory) {
+        ngx_pfree(req->pool, chain_memory);
+    }
+    if (exchange_area_write) {
+        ngx_pfree(req->pool, exchange_area_write);
+    }
+    av_freep(&ofmt_ctx->pb->buffer);
+    if (ofmt_ctx && ofmt_ctx->pb && ofmt_ctx->nb_streams > 0) av_freep(&ofmt_ctx->pb);
+    */
     if (io_write_context) av_free(io_write_context);
     if (ofmt_ctx && ofmt_ctx->nb_streams > 0) avformat_free_context(ofmt_ctx);
-    //    if (exchange_area_read) {
-    //        av_freep(exchange_area_read);
-    //    }
     av_free_packet(&packet);
     av_frame_free(&frame);
 
