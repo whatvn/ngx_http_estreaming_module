@@ -190,12 +190,13 @@ static int write_adbr_packet(void *opaque, unsigned char *buf, int buf_size) {
 }
 
 static int prepare_output_encoder(ngx_http_request_t *req, video_buffer *destination,
-        AVFormatContext *ifmt_ctx, AVFormatContext *ofmt_ctx, int width, int height) {
+        AVFormatContext *ifmt_ctx, AVFormatContext *ofmt_ctx, int width, int height,
+        AVIOContext **io_context) {
     AVStream *out_stream;
     AVStream *in_stream;
     AVCodecContext *dec_ctx, *enc_ctx;
     AVCodec *encoder;
-    AVIOContext *io_context;
+    //    AVIOContext *io_context;
     int ret;
     unsigned int i;
     int buffer_size;
@@ -204,8 +205,8 @@ static int prepare_output_encoder(ngx_http_request_t *req, video_buffer *destina
     unsigned char *exchange_area_write;
     buffer_size = 1024;
     exchange_area_write = ngx_pcalloc(req->pool, buffer_size * sizeof (unsigned char));
-    io_context = avio_alloc_context(exchange_area_write, buffer_size, 1, (void *) destination, NULL, write_adbr_packet, NULL);
-    ofmt_ctx->pb = io_context;
+    *io_context = avio_alloc_context(exchange_area_write, buffer_size, 1, (void *) destination, NULL, write_adbr_packet, NULL);
+    ofmt_ctx->pb = *io_context;
     ofmt_ctx->oformat = av_guess_format("mpegts", NULL, NULL);
     if (!ofmt_ctx) {
         av_log(NULL, AV_LOG_ERROR, "Could not create output context\n");
@@ -642,7 +643,8 @@ int ngx_estreaming_adaptive_bitrate(ngx_http_request_t *req, ngx_chain_t *chain,
     AVFormatContext *ifmt_ctx = NULL;
     AVFormatContext *ofmt_ctx = NULL;
     FilteringContext *filter_ctx = NULL;
-    AVIOContext * io_read_context = NULL;
+    AVIOContext *io_read_context = NULL;
+    AVIOContext *io_write_context = NULL;
     enum AVMediaType type;
     unsigned int stream_index;
     unsigned int i;
@@ -674,7 +676,7 @@ int ngx_estreaming_adaptive_bitrate(ngx_http_request_t *req, ngx_chain_t *chain,
 
     /* allocate memory for output context */
     ofmt_ctx = avformat_alloc_context();
-    if ((ret = prepare_output_encoder(req, destination, ifmt_ctx, ofmt_ctx, width, height)) < 0)
+    if ((ret = prepare_output_encoder(req, destination, ifmt_ctx, ofmt_ctx, width, height, &io_write_context)) < 0)
         goto end;
     filter_ctx = av_malloc_array(ifmt_ctx->nb_streams, sizeof (*filter_ctx));
     if ((ret = init_filters(width, height, ifmt_ctx, ofmt_ctx, filter_ctx)) < 0)
@@ -788,7 +790,8 @@ end:
     //        ngx_pfree(req->pool, exchange_area_write);
     //    }
     //av_freep(&ofmt_ctx->pb->buffer);
-    if (ofmt_ctx && ofmt_ctx->pb && ofmt_ctx->nb_streams > 0) av_freep(&ofmt_ctx->pb);
+    //    if (ofmt_ctx && ofmt_ctx->pb && ofmt_ctx->nb_streams > 0) av_freep(&ofmt_ctx->pb);
+    if (io_write_context) av_free(io_write_context);
     if (ofmt_ctx && ofmt_ctx->nb_streams > 0) avformat_free_context(ofmt_ctx);
     //    if (exchange_area_read) {
     //        av_freep(exchange_area_read);
