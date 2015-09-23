@@ -111,7 +111,7 @@ static int open_input_file(ngx_pool_t *pool, ngx_chain_t *chain, int width,
     source->len = 0;
     source->pool = pool;
     size_t _size = 4096;
-    exchange_area_read = av_mallocz(_size);
+    exchange_area_read = (unsigned char *) av_mallocz(_size * sizeof(unsigned char));
     size_t chain_size = flatten_chain(chain, pool, &buf);
     source->data = buf;
     source->len = chain_size;
@@ -172,7 +172,6 @@ static int open_input_file(ngx_pool_t *pool, ngx_chain_t *chain, int width,
      */
     //if (buf) ngx_pfree(pool, buf);
     if (source) ngx_pfree(pool, source);
-    printf("Read source fram ok\n");
     return 0;
 }
 
@@ -204,7 +203,7 @@ static int prepare_output_encoder(ngx_http_request_t *req, video_buffer *destina
     AVDictionary *format_option = NULL;
     unsigned char *exchange_area_write;
     buffer_size = 1024;
-    exchange_area_write = ngx_pcalloc(req->pool, buffer_size * sizeof (unsigned char));
+    exchange_area_write = (unsigned char *) av_mallocz(buffer_size * sizeof (unsigned char));
     *io_context = avio_alloc_context(exchange_area_write, buffer_size, 1, (void *) destination, NULL, write_adbr_packet, NULL);
     ofmt_ctx->pb = *io_context;
     ofmt_ctx->oformat = av_guess_format("mpegts", NULL, NULL);
@@ -308,9 +307,6 @@ static int prepare_output_encoder(ngx_http_request_t *req, video_buffer *destina
     ret = avformat_write_header(ofmt_ctx, &format_option);
     av_dict_free(&format_option);
     av_dict_free(&option);
-    if (exchange_area_write) {
-        av_freep(exchange_area_write);
-    }
     if (ret < 0) {
         av_log(NULL, AV_LOG_ERROR, "Error occurred when opening output file\n");
         return ret;
@@ -636,7 +632,7 @@ static int flush_decoder(unsigned int stream_index, AVFormatContext *ifmt_ctx) {
 
 int ngx_estreaming_adaptive_bitrate(ngx_http_request_t *req, ngx_chain_t *chain,
         video_buffer *destination, mp4_split_options_t *options) {
-    int ret;
+    int ret = 0;
     AVPacket packet = {.data = NULL, .size = 0};
     AVFrame *frame = NULL;
     /* move global var into local scope */
@@ -667,8 +663,7 @@ int ngx_estreaming_adaptive_bitrate(ngx_http_request_t *req, ngx_chain_t *chain,
     ifmt_ctx = avformat_alloc_context();
     if ((ret = open_input_file(req->pool, chain, width,
             height, ifmt_ctx, &io_read_context)) < 0) {
-        //        avformat_close_input(&ifmt_ctx);
-        return -1;
+        goto end;
     }
 
     /* allocate memory for output context */
