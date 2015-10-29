@@ -12,14 +12,12 @@
 #include <sys/types.h>
 #include <stdio.h>
 #include <string.h>
-#include <libswresample/swresample.h>
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
 #include <libavutil/mathematics.h>
 #include <libavutil/opt.h>
 #include <libavutil/old_pix_fmts.h>
-#include <libswresample/swresample.h>
 #include <libavfilter/avfiltergraph.h>
 #include <libavfilter/avcodec.h>
 #include <libavfilter/buffersink.h>
