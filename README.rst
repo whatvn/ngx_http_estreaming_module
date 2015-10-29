@@ -63,7 +63,7 @@ or compile everything like I do
 
 ::
     
-    ./configure --add-module=ngnx_http_estreaming_module 
+    ./configure --add-module=ngx_http_estreaming_module 
 
 
 
