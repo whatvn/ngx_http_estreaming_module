@@ -14,6 +14,160 @@
 #include "mp4_module.h"
 #include "ngx_http_mp4_faststart.h"
 
+static ngx_int_t ngx_estreaming_is_number(const u_char *data, size_t len) {
+    size_t i;
+    if (len == 0) {
+        return 0;
+    }
+
+    for (i = 0; i < len; i++) {
+        if (data[i] < '0' || data[i] > '9') {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+static ngx_int_t ngx_estreaming_set_resolution(mp4_split_options_t *options, ngx_str_t segment) {
+    if (segment.len == 4 && ngx_strncmp(segment.data, "360p", 4) == 0) {
+        options->video_resolution = 1;
+        return NGX_OK;
+    }
+    if (segment.len == 4 && ngx_strncmp(segment.data, "480p", 4) == 0) {
+        options->video_resolution = 2;
+        return NGX_OK;
+    }
+    if (segment.len == 4 && ngx_strncmp(segment.data, "720p", 4) == 0) {
+        options->video_resolution = 3;
+        return NGX_OK;
+    }
+
+    return NGX_DECLINED;
+}
+
+static ngx_int_t ngx_estreaming_parse_pretty_uri(ngx_http_request_t *r,
+        mp4_split_options_t *options, ngx_str_t *source_uri) {
+    ngx_str_t segments[32];
+    ngx_str_t filename;
+    ngx_uint_t i, n = 0, prefix_segments = 0;
+    ngx_int_t fragment_start = NGX_ERROR;
+    u_char *new_uri;
+    u_char *it;
+    u_char *end;
+    size_t new_len;
+
+    source_uri->data = r->uri.data;
+    source_uri->len = r->uri.len;
+
+    it = r->uri.data;
+    end = r->uri.data + r->uri.len;
+
+    while (it < end && n < 32) {
+        u_char *seg_start;
+        while (it < end && *it == '/') {
+            it++;
+        }
+        if (it >= end) {
+            break;
+        }
+        seg_start = it;
+        while (it < end && *it != '/') {
+            it++;
+        }
+        segments[n].data = seg_start;
+        segments[n].len = it - seg_start;
+        n++;
+    }
+
+    if (n < 2) {
+        return NGX_DECLINED;
+    }
+
+    filename = segments[n - 1];
+
+    if (n >= 4 &&
+            segments[n - 4].len == 4 &&
+            ngx_strncmp(segments[n - 4].data, "adbr", 4) == 0 &&
+            ngx_estreaming_set_resolution(options, segments[n - 3]) == NGX_OK &&
+            ngx_estreaming_is_number(segments[n - 2].data, segments[n - 2].len)) {
+        fragment_start = ngx_atoi(segments[n - 2].data, segments[n - 2].len);
+        if (fragment_start == NGX_ERROR) {
+            return NGX_DECLINED;
+        }
+        options->adbr = 1;
+        options->fragments = 1;
+        options->fragment_start = (uint64_t) fragment_start;
+        prefix_segments = n - 4;
+    } else if (n >= 3 &&
+            segments[n - 3].len == 3 &&
+            ngx_strncmp(segments[n - 3].data, "org", 3) == 0 &&
+            ngx_estreaming_is_number(segments[n - 2].data, segments[n - 2].len)) {
+        fragment_start = ngx_atoi(segments[n - 2].data, segments[n - 2].len);
+        if (fragment_start == NGX_ERROR) {
+            return NGX_DECLINED;
+        }
+        options->org = 1;
+        options->fragments = 1;
+        options->fragment_start = (uint64_t) fragment_start;
+        prefix_segments = n - 3;
+    } else if (n >= 2 &&
+            ngx_estreaming_is_number(segments[n - 2].data, segments[n - 2].len)) {
+        fragment_start = ngx_atoi(segments[n - 2].data, segments[n - 2].len);
+        if (fragment_start == NGX_ERROR) {
+            return NGX_DECLINED;
+        }
+        options->fragments = 1;
+        options->fragment_start = (uint64_t) fragment_start;
+        prefix_segments = n - 2;
+    } else if (n >= 3 &&
+            segments[n - 3].len == 4 &&
+            ngx_strncmp(segments[n - 3].data, "adbr", 4) == 0 &&
+            ngx_estreaming_set_resolution(options, segments[n - 2]) == NGX_OK) {
+        options->adbr = 1;
+        prefix_segments = n - 3;
+    } else if (n >= 2 &&
+            segments[n - 2].len == 3 &&
+            ngx_strncmp(segments[n - 2].data, "org", 3) == 0) {
+        options->org = 1;
+        prefix_segments = n - 2;
+    } else {
+        return NGX_DECLINED;
+    }
+
+    if (filename.len == 0) {
+        return NGX_DECLINED;
+    }
+
+    new_len = 0;
+    for (i = 0; i < prefix_segments; i++) {
+        new_len += 1 + segments[i].len;
+    }
+    new_len += 1 + filename.len;
+
+    new_uri = ngx_pcalloc(r->pool, new_len + 1);
+    if (new_uri == NULL) {
+        return NGX_ERROR;
+    }
+
+    {
+        u_char *p = new_uri;
+        for (i = 0; i < prefix_segments; i++) {
+            *p++ = '/';
+            ngx_memcpy(p, segments[i].data, segments[i].len);
+            p += segments[i].len;
+        }
+        *p++ = '/';
+        ngx_memcpy(p, filename.data, filename.len);
+        p += filename.len;
+        *p = '\0';
+    }
+
+    source_uri->data = new_uri;
+    source_uri->len = new_len;
+    return NGX_OK;
+}
+
 static void *ngx_http_hls_create_conf(ngx_conf_t * cf) {
     hls_conf_t *conf;
     conf = ngx_pcalloc(cf->pool, sizeof (hls_conf_t));
@@ -76,6 +230,8 @@ static ngx_int_t ngx_estreaming_handler(ngx_http_request_t * r) {
     ngx_open_file_info_t of;
     ngx_http_core_loc_conf_t *clcf;
     video_buffer *destination;
+    ngx_str_t source_uri, req_uri_backup;
+    ngx_flag_t uri_rewritten = 0;
 
     if (!(r->method & (NGX_HTTP_GET | NGX_HTTP_HEAD)))
         return NGX_HTTP_NOT_ALLOWED;
@@ -90,9 +246,21 @@ static ngx_int_t ngx_estreaming_handler(ngx_http_request_t * r) {
 
     mp4_split_options_t * options = mp4_split_options_init(r);
 
+    if (ngx_estreaming_parse_pretty_uri(r, options, &source_uri) == NGX_OK) {
+        req_uri_backup = r->uri;
+        r->uri = source_uri;
+        uri_rewritten = 1;
+    }
+
     if (!ngx_http_map_uri_to_path(r, &path, &root, 1)) {
+        if (uri_rewritten) {
+            r->uri = req_uri_backup;
+        }
         mp4_split_options_exit(r, options);
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
+    }
+    if (uri_rewritten) {
+        r->uri = req_uri_backup;
     }
 
     if (r->args.len && !mp4_split_options_set(r, options, (const char *) r->args.data, r->args.len)) {
@@ -119,6 +287,10 @@ static ngx_int_t ngx_estreaming_handler(ngx_http_request_t * r) {
     // change file name to mp4
     // in order to lookup file in filesystem
     char *ext = strrchr((const char *) path.data, '.');
+    if (ext == NULL) {
+        mp4_split_options_exit(r, options);
+        return NGX_HTTP_UNSUPPORTED_MEDIA_TYPE;
+    }
     strcpy(ext, ".mp4");
     path.len = ((u_char *) ext - path.data) + 4;
     path.data[path.len] = '\0';

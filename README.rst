@@ -69,9 +69,8 @@ or compile everything like I do
 
 2. To use:
 
-This module take various request's query string to determine which playlist, resolution should be return to client request, and because using query strings makes url looks dynamic, it's not caching friendly,
-this module then pre-rewrite url when writing output playlist, but parsing url without using query string is hard and takes too much time, so it still using query-strings when processing input-url.
-We have to use rewrite module here
+This module supports clean HLS paths directly and no longer depends on rewrite rules for adaptive playlist/segment routing.
+It parses URI path segments (adbr/org, resolution, segment index) internally and maps requests back to the source mp4 file.
 
 ::    
 
@@ -80,11 +79,6 @@ We have to use rewrite module here
     #secure_link_md5       "axcDxSVnsGkAKvqhqOh$host$arg_e";
     #                       if ($secure_link = "")  { return 403; }
     #               if ($secure_link = "0") { return 410; }
-    rewrite ^(.*)/(adbr)/([0-9]+p)/([0-9]+)/(.*ts)?(.*) $1/$5?video=$4&$2=true&vr=$3&$6 last;
-    rewrite ^(.*)/(adbr)/([0-9]+p)/(.*\.m3u8)?(.*) $1/$4?$2=true&vr=$3&$5 last;
-    rewrite ^(.*)/(org)/(.*\.m3u8)?(.*) $1/$3?$2=true&$6 last;
-    rewrite ^(.*)/(org)/([0-9]+)/(.*\.ts)?(.*) $1/$4?video=$3&$2=true&$5 last;
-    rewrite ^(.*)/([0-9]+)/(.*ts)?(.*)  $1/$3?video=$2&$4 last;
     location /upload {
             streaming;
             error_log /data/log/error.log ;
@@ -136,6 +130,15 @@ When receive master playlist, player will choose which child playlist should be 
     #EXTINF:0.200,
     9/demo.ts
     #EXT-X-ENDLIST
+
+Clean child playlist/segment URLs (no rewrite rules needed):
+
+::
+
+    /upload/adbr/360p/demo.m3u8
+    /upload/adbr/360p/0/demo.ts
+    /upload/org/demo.m3u8
+    /upload/org/0/demo.ts
 
 
 This module was tested with: jwplayer, html5, flowplayer, flashhls, ios device, Mac OS, and new android version... 

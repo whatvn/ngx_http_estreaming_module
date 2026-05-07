@@ -168,6 +168,8 @@ int mp4_split_options_set(ngx_http_request_t *r, struct mp4_split_options_t *opt
         const char *args_data,
         unsigned int args_size) {
     int result = 1;
+#define KEY_EQ(lit) (key_len == (sizeof(lit) - 1) && strncmp(key, lit, sizeof(lit) - 1) == 0)
+#define VAL_EQ(lit) (val_len == (int) (sizeof(lit) - 1) && strncmp(val, lit, sizeof(lit) - 1) == 0)
 
     {
         hls_conf_t *conf = ngx_http_get_module_loc_conf(r, ngx_http_estreaming_module);
@@ -200,45 +202,45 @@ int mp4_split_options_set(ngx_http_request_t *r, struct mp4_split_options_t *opt
                             memcpy(valz, val, val_len);
                             valz[val_len] = '\0';
 
-                            if (!strncmp("start", key, key_len)) {
+                            if (KEY_EQ("start")) {
                                 options->start = (float) (strtod(valz, NULL));
                                 options->start_integer = atoi64(valz);
-                            } else if (!strncmp("end", key, key_len)) {
+                            } else if (KEY_EQ("end")) {
                                 options->end = (float) (strtod(valz, NULL));
-                            } else if (!strncmp("bitrate", key, key_len)) {
+                            } else if (KEY_EQ("bitrate")) {
                                 options->fragment_bitrate = (unsigned int) (atoi64(valz));
-                            } else if (!strncmp("org", key, key_len)) {
-                                if (!strncmp("true", val, val_len)) {
+                            } else if (KEY_EQ("org")) {
+                                if (VAL_EQ("true")) {
                                     options->org = 1;
                                 }
-                            } else if (!strncmp("video", key, key_len)) {
+                            } else if (KEY_EQ("video")) {
                                 options->fragments = 1;
                                 options->fragment_start = atoi64(valz);
-                            } else if (!strncmp("audio", key, key_len)) {
+                            } else if (KEY_EQ("audio")) {
                                 options->fragment_track_id = atoi64(valz);
-                            } else if (!strncmp("length", key, key_len)) {
+                            } else if (KEY_EQ("length")) {
                                 conf->length = (ngx_uint_t) atoi64(valz);
-                            } else if (!strncmp("hash", key, key_len)) {
+                            } else if (KEY_EQ("hash")) {
                                 if (val_len > 16) {
                                     val_len = 16;
                                     valz[val_len] = 0;
                                 }
                                 options->hash = ngx_pcalloc(r->pool, val_len + 1);
                                 strcpy(options->hash, valz);
-                            } else if (!strncmp("input", key, key_len)) {
-                                if (!strncmp("flv", val, val_len)) {
+                            } else if (KEY_EQ("input")) {
+                                if (VAL_EQ("flv")) {
                                     options->input_format = INPUT_FORMAT_FLV;
                                 }
-                            } else if (!strncmp("vr", key, key_len)) {
-                                if (!strncmp("360p", val, val_len)) {
+                            } else if (KEY_EQ("vr")) {
+                                if (VAL_EQ("360p")) {
                                     options->video_resolution = 1; //360p
-                                } else if (!strncmp("480p", val, val_len)) {
+                                } else if (VAL_EQ("480p")) {
                                     options->video_resolution = 2; //480p
-                                } else if (!strncmp("720p", val, val_len)) {
+                                } else if (VAL_EQ("720p")) {
                                     options->video_resolution = 3; //720p
                                 }
-                            } else if (!strncmp("adbr", key, key_len)) {
-                                if (!strncmp("true", val, val_len)) {
+                            } else if (KEY_EQ("adbr")) {
+                                if (VAL_EQ("true")) {
                                     options->adbr = 1;
                                 }
                             }
@@ -255,6 +257,8 @@ int mp4_split_options_set(ngx_http_request_t *r, struct mp4_split_options_t *opt
     }
 
     return result;
+#undef KEY_EQ
+#undef VAL_EQ
 }
 
 void mp4_split_options_exit(ngx_http_request_t *r, struct mp4_split_options_t *options) {
